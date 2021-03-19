@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Time Service</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- MATERIAL DESIGN ICONIC FONT -->
+    <link rel="stylesheet" href="/fonts/material-design-iconic-font/css/material-design-iconic-font.min.css">
+
+    <!-- STYLE CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <div class="wrapper">
+        <div class="inner">
+            <form method="POST" action="/time">
+                <h3>Servicio de Tiempo</h3>
+                <p>Si te autenticas correctamente retorna la hora del servidor.</p>
+
+                <label class="form-group">
+                    <input name="username" type="text" class="form-control" required>
+                    <span>Usuario</span>
+                    <span class="border"></span>
+                </label>
+
+                <label class="form-group">
+                    <input name="password" type="password" class="form-control" required>
+                    <span>Constraseña</span>
+                    <span class="border"></span>
+                </label>
+
+                <button type="submit">Submit<i class="zmdi"></i></button>
+            </form>
+            #if($res)
+            <hr style="margin-top: 55px" />
+            <p style="margin: 20px 0">$res</p>
+            <hr />
+            #end
+        </div>
+    </div>
+
+</body><!-- This templates was made by Colorlib (https://colorlib.com) -->
+
+</html>
