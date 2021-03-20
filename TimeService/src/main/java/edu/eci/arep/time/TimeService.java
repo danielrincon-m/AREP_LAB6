@@ -10,8 +10,19 @@ import spark.Response;
 public class TimeService {
 
     private static final String USER = "Daniel";
-    private static final String PASS = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; //123456
+    private static final String PASS = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"; // 123456
 
+    /**
+     * Recibe un usuario y contraseña como parámetro, si estos son correctos,
+     * responde la hora del servidor, si son incorrectos, responde un error de
+     * autenticación
+     * 
+     * @param req El request enviado
+     * @param res La respuesta por parte del servidor
+     * @return El mensaje de respuesta
+     * @throws UnsupportedEncodingException Si la codificación del mensaje de
+     *                                      respuesta es incorrecta
+     */
     public static String getTime(Request req, Response res) throws UnsupportedEncodingException {
         String username = req.queryParams("username");
         String passwd = req.queryParams("password");

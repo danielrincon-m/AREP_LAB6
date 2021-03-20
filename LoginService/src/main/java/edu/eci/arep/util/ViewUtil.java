@@ -4,7 +4,6 @@ import java.util.Map;
 
 import spark.ModelAndView;
 import spark.Request;
-import spark.Route;
 import spark.template.velocity.VelocityTemplateEngine;
 
 /**

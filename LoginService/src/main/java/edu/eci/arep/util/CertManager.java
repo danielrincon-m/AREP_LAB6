@@ -13,7 +13,25 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
+/**
+ * Clase que maneja los certificados y los agrega al trusted source
+ */
 public class CertManager {
+
+    /**
+     * Este método recibe como argumento un archivo de certificado y una contraseña,
+     * y los utiliza para parametrizar este certificado cómo una fuente confiable
+     * para enviar peticiones
+     * 
+     * @param certFile El archivo del certificado
+     * @param passwd   La contraseña para abrir el certificado
+     * @throws KeyStoreException        .
+     * @throws NoSuchAlgorithmException .
+     * @throws CertificateException     .
+     * @throws FileNotFoundException    .
+     * @throws IOException              .
+     * @throws KeyManagementException   .
+     */
     public static void SetSSlContext(String certFile, String passwd) throws KeyStoreException, NoSuchAlgorithmException,
             CertificateException, FileNotFoundException, IOException, KeyManagementException {
         // Create a file and a password representation

@@ -20,8 +20,11 @@ import spark.Request;
 import spark.Response;
 
 /**
- * Hello world!
- *
+ * Clase principal de LoginService, aquí se define la ruta que se va a manejar
+ * para recibir las peticiones y la función que manejará la respuesta a la
+ * petición
+ * 
+ * @author Daniel Rincón
  */
 public class App {
     public static void main(String[] args) throws KeyManagementException, KeyStoreException, NoSuchAlgorithmException,
@@ -48,6 +51,12 @@ public class App {
         });
     }
 
+    /**
+     * Busca el pueto de funcionamiento en las variables de entorno del sistema, y
+     * si no lo encuentra utiliza el puerto por defecto.
+     * 
+     * @return El puerto sobre el cuál correrá el servidor.
+     */
     static int getPort() {
         if (System.getenv("PORT") != null) {
             return Integer.parseInt(System.getenv("PORT"));
