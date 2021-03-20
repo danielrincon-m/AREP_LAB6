@@ -32,7 +32,7 @@ La contraseña que espera el LoginService debe estar codificada bajo el algoritm
 
 Este servicio presenta un formulario web, con campos para diligenciar un usuario y una contraseña, al diligenciar el formulario y enviarlo, se realiza una petición POST con los datos diligenciados, una vez llegan al servidor, la contraseña es cifrada bajo un algoritmo SHA-256, posterior a esto se envía una petición GET al servicio de Time con estos datos y se renderiza la respuesta del servicio en la vista del usuario.
 
-## Video de demostración
+## Video de demostración 📼
 
 Se realizó un video demostrando y explicando el funcionamiento de todo el sistema, este video puede ser encontrado [AQUÍ](Demonstration.mp4).
 
