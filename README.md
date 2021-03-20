@@ -13,7 +13,7 @@ En este laboratorio desarrollaremos un proyecto web simple, en el cual los dos m
 
 La arquitectura de los servicios se muestra a continuación, en donde OtherService representa nuestro TimeService:
 
-![Arquitectura](img/arquitectura.png)
+![Arquitectura](img/arquitectura.jpg)
 
 
 ## Implementación 🛡️
