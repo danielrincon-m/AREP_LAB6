@@ -1,142 +1,47 @@
-# Docker y AWS
+# Aplicación Web Segura y Distribuída
 
 [![danielrincon-m](https://circleci.com/gh/danielrincon-m/AREP_LAB4.svg?style=svg)](https://app.circleci.com/pipelines/github/danielrincon-m/AREP_LAB4)
 <!-- [![Heroku](img/heroku_long.png)](https://nanospring.herokuapp.com/nspapp/register) -->
 
-## Descripción 📦
+## Descripción 🔑
 
-En este laboratorio desarrollaremos un proyecto web simple, en en cual cada uno de los módulos que lo componen estarán corriendo en contenedores de docker independientes en una máquina virtual AWS, sin embargo, estos módulos se podrán comunicar entre ellos a través de la red local. Los componentes del sistema se enumeran a continuación:
+En este laboratorio desarrollaremos un proyecto web simple, en el cual los dos módulos que lo componen estarán corriendo en máquinas virtuales independientes en Amazon Web Services, ambas máquinas tendrán corriendo servidores de Spark Java, que estarán escuchando peticiones públicas. Los componentes del sistema se enumeran a continuación:
 
-- Motor de bases de datos Mongodb corriendo en el puerto local 27017.
-- 3 Instancias del servicio LogService escuchando en los puertos locales 35001, 35002 y 35003 respectivamente.
-- Una instancia del servicio RoundRobin escuchando en el puerto público 8080.
+- Cliente, en este caso, nuestra máquina local.
+- Un servicio llamado LoginService, este servicio publica un formulario accesible a través de un navegador Web en donde se deberán poner credenciales válidas para acceder al otro servicio.
+- Un servicio llamado TimeService, que si es solicitado con las credenciales correctas, nos retornará la hora del servidor.
+
+La arquitectura de los servicios se muestra a continuación, en donde OtherService representa nuestro TimeService:
+
+![Arquitectura](img/arquitectura.png)
 
 
-### Implementación
+## Implementación 🛡️
 
-La implementación se divide en dos partes, desarrollo y creación de contenedores, y despliegue de los contenedores en AWS. Haremos un breve recorrido por ambas partes.
+La arquitectura de la aplicación se basa en comunicaciones cifradas vía HTTPS, para lograr esto, ambos servicios presentados tienen sus propios certificados de tipo "self-signed", y el servicio de Login cuenta con autorización para recibir datos de manera segura por parte del servicio de Time, esto se logró agregando el certificado de este último, a la lista de certificados válidos del servicio Login.
 
-#### Desarrollo y creación de contenedores
+Vamos a realizar un breve recorrido por cada uno de los servicios.
 
-Dos de las tres partes que componen el proyecto fueron desarrolladas por nosotros mismos, estas son [RoundRobin](/RoundRobin) y [LogService](/LogService), su código fuente puede ser encontrado en los enlaces de cada una de ellas, y su arquitectura en el [documento de diseño](Lab5_AREP.pdf).
+### TimeService
 
-Luego de crear con éxito las partes y probarlas localmente en los servidores SparkWeb de cada una de ellas, procedimos a encapsularlas en contenedores Docker como se muestra continuación.
+Se trata de un servicio web simple que responde a una sola petición GET en la ruta '/time', el servicio espera dos parámetros, un usuario y una contraseña, por ahora los datos válidos están incrustados en el código, y deben ser enviados al servidor siempre que se desee realizar una petición, sin embargo una gran mejora consistiría en crear una sesión para los usuarios autenticados y a través de esta sesión, responder a la respuesta sin requerir los demás datos, además de almacenar las credenciales en un archivo o base de datos.
 
-Inicialmente, construimos los contenedores de manera local con los siguientes comandos:
+La contraseña que espera el LoginService debe estar codificada bajo el algoritmo de hash SHA-256, esta codificación es responsabilidad de la capa que llama al servicio. El servicio web está construido sobre [Spark Java](#herramientas-utilizadas-%EF%B8%8F), fué empaquetado y subido a la máquina virtual de AWS para su ejecución.
 
-![Build LogService](/img/build_logservice.png)
-![Build RoundRobin](/img/build_roundrobin.png)
+### LoginService
 
-Luego de esto, creamos dos repositorios en dockerhub, uno para cada una de nuestras imágenes, y las subimos con los siguientes comandos:
+Este servicio presenta un formulario web, con campos para diligenciar un usuario y una contraseña, al diligenciar el formulario y enviarlo, se realiza una petición POST con los datos diligenciados, una vez llegan al servidor, la contraseña es cifrada bajo un algoritmo SHA-256, posterior a esto se envía una petición GET al servicio de Time con estos datos y se renderiza la respuesta del servicio en la vista del usuario.
 
-Mapeamos los repositorios a nuestros contenedores locales
+## Video de demostración
 
-![Tag LogService](/img/tag_logservice.png)
-![Tag RoundRobin](/img/tag_roundrobin.png)
+Se realizó un video demostrando y explicando el funcionamiento de todo el sistema, este video puede ser encontrado [AQUÍ](Demostración Aplicación Web Segura.mp4).
 
-Subimos los contenedores a los repositorios
-
-![Push LogService](img/push_logservice.png)
-![Push RoundRobin](img/push_roundrobin.png)
-
-Ahora que tenemos los contenedores subidos en nuestro repositorio, vamos a crear un archivo docker compose para instalarlos de manera sencilla en otras máquinas, el código de este archivo luce así:
-
-``` YML
-version: '2'
-
-services:
-    round:
-        image: danielrincon/roundrobin:latest
-        container_name: roundrobin
-        ports:
-            - "8080:6000"
-        depends_on:
-            - "logservice1"
-            - "logservice2"
-            - "logservice3"
-            - "db"
-        
-    logservice1:
-        image: danielrincon/logservice:latest
-        container_name: logservice35001
-        ports:
-            - "35001:6000"
-        depends_on:
-            - "db"
-
-    logservice2:
-        image: danielrincon/logservice:latest
-        container_name: logservice35002
-        ports:
-            - "35002:6000"
-        depends_on:
-            - "db"
-
-    logservice3:
-        image: danielrincon/logservice:latest
-        container_name: logservice35003
-        ports:
-            - "35003:6000"
-        depends_on:
-            - "db"
-
-    db:
-        image: mongo:3.6.1
-        container_name: mongodb
-        ports:
-            - 27017:27017
-        command: mongod
-
-volumes:
-    mongodb:
-    mongodb_config:
-```
-
-Como podemos observar tenemos una instancia de nuestro contenedor RoundRobin, el cuál hará el rol de servidor público y de balanceador de carga, tres instancias de nuestro contenedor LogService, los cuales se encargarán de escribir los logs en la base de datos, y una instancia de MongoDB que es nuestra base de datos no relacional.
-
-Gracias a que **docker-compose** crea una red interna con un servicio DNS, podemos conectarnos entre contenedores por medio de sus propios nombres, un ejemplo de conexión a la base de datos corriendo en el contenedor llamado *mongodb* es el siguiente:
-
-![Conexión MongoDB](img/conn_mongodb.png)
-
----
-
-#### Despliegue de contenedores en AWS
-
-Gracias a que subimos nuestro repositorio en Github, fué muy sencillo clonarlo en nuestra máquina virtual en AWS y ejecutar el *docker-compose* para instalar todos los contenedores. Inicialmente, instalamos el *docker-compose* con los siguiente comando:
-
-![Install docker-compose](/img/compose-inst.png)
-![Execute docker-compose](img/compose-exec.png)
-
-Luego de esto, clonamos nuestro repositorio de Github, nos cambiamos a la carpeta e instalamos nuestros contenedores por medio de *docker-compose* de la siguiente manera:
-
-![Deploy docker-compose](img/compose-deploy.png)
-
-Una vez los contenedores se encuentran desplegados y en ejecución, podemos observar el estado de la red interna por medio del siguiente comando, y arrojándonos el siguiente resultado:
-
-``` bash
-docker network inspect <Network name>
-```
-![Local Network](img/network.png)
-
-Acá nos pudimos dar cuenta de que todos los contenedores se encuentran dentro de la misma red y se pueden comunicar entre ellos. Por último, debemos abrir el puerto público de la máquina virtual, en nuestro caso el 8080, para que de esta forma sea accesible por cualquier persona.
-
-![Open Port](img/open_port.png)
-
-#### Resultado
-
-Vamos a observar que sucede al agregar un nuevo registro:
-
-![Register Before Add](img/reg_before.png)
-![Register After Add](img/reg_after.png)
-
-Como pudimos observar, se adicionó y se retornó correctamente el registro junto con los que se habían registrado anteriormente.
-
-### Descarga del proyecto
+## Descarga del proyecto ⬇️
 
 Clone el proyecto utilizando el siguiente comando:
 
 ```
-git clone https://github.com/danielrincon-m/AREP_LAB5.git
+git clone https://github.com/danielrincon-m/AREP_LAB6.git
 ```
 
 ## Correr las pruebas unitarias 🧪
@@ -157,9 +62,9 @@ mvn test
 
 ## Documentación del código fuente 🌎
 
-La documentación de los proyectos puede ser encontrada en las carpetas [LogService/docs](LogService/docs) y [RoundRobin/docs](RoundRobin/docs).
+La documentación de los proyectos puede ser encontrada en las carpetas [LoginService/docs](LoginService/docs) y [TimeService/docs](TimeService/docs).
 
-También puede ser generada con Maven, clonando el proyecto y ejecutando el siguiente comando:
+También puede ser generada con Maven, clonando el proyecto y ejecutando el siguiente comando en cada una de las carpetas:
 
 ```
 mvn javadoc:javadoc
@@ -167,7 +72,7 @@ mvn javadoc:javadoc
 
 ## Documento de diseño 📄
 
-El documento de diseño del programa puede ser encontrado [aquí](Lab5_AREP.pdf).
+Este laboratorio no cuenta con documento de diseño.
 
 ## Herramientas utilizadas 🛠️
 
@@ -175,8 +80,7 @@ El documento de diseño del programa puede ser encontrado [aquí](Lab5_AREP.pdf)
 * [Maven](https://maven.apache.org/) - Manejo de Dependencias
 * [JUnit](https://junit.org/junit4/) - Pruebas unitarias
 * [GitHub](https://github.com/) - Repositorio de código
-* [Docker](https://www.docker.com/) - Herramienta de encapsulamiento en contenedores
-* [MongoDB](https://www.mongodb.com/es) - Base de datos
+* [Spark](https://sparkjava.com/) - Framework web
 * [AWS](https://aws.amazon.com/es/) - Despliegue en la nube
 
 ## Autor 🧔
